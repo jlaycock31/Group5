@@ -1,0 +1,33 @@
+#!/bin/bash
+#CIT470 -- Project 3
+#Jonathan Gaskill, John Laycock, Evan Brodbeck
+#Monit Configuration Test - Client
+
+yum -y install stress
+
+#Create a very large file on the hard drive to test hard drive monitoring config
+fallocate -l 50G /tmp/testhog
+sleep 30
+monit summary | grep -e "Home" -e "Root" -e "Var"
+rm /tmp/testhog -f
+
+#Bring CPU cycles up to 100% utilization and fill RAM to over 75% capacity
+stress --cpu 100 --vm-bytes 1792MB --timeout 30s
+monit summary | grep localhost
+
+#Test all services that are monitored on the client
+systemctl stop nslcd
+sleep 30
+monit summary | grep nslcd
+
+systemctl stop sshd
+sleep 30
+monit summary | grep ssh
+
+systemctl stop nfs
+sleep 30
+monit summary | grep nfs
+
+systemctl stop rsyslog
+sleep 30
+monit summary | grep rsyslog

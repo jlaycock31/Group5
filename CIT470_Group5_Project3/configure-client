@@ -1,0 +1,23 @@
+#!/bin/bash
+#CIT470 -- Project 3
+#Jonathan Gaskill, John Laycock, Evan Brodbeck
+#Monit Configuration Script - Client
+
+#Set up help file for usage parameters and expected input
+if [ "$1" == "-h" ] ; then echo "Usage: `basename $0` [This script is intended to be ran with two parameters- example(replace ServerIP and AdminEmail with your values): ./configure-client 'ServerIP' 'AdminEmail']" ; exit 0 ; fi
+
+#Removes original monitrc file, acquires pre-configured version from web server, and modifies permissions for use.
+rm /etc/monitrc
+wget http://10.2.6.19/~apache-user/monitrc -P /etc/
+chmod 600 /etc/monitrc
+
+#Adds in remote logging to rysyslog.conf using parameter #1
+sed -i "s/#*.* @@remote-host:514/*.* @$1:514/g" /etc/rsyslog.conf
+systemctl restart rsyslog
+
+#Uses sed to replace the root address with parameter #1 and the admin email with parameter #2
+sed -i "s/root@localhost/root@$1/g" /etc/monitrc
+sed -i "s/alert emailhere/alert $2/g" /etc/monitrc
+
+#Restarts monit service to uptake the changes
+systemctl restart monit
